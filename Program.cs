@@ -5,6 +5,7 @@
 
     class Program
     {
+        // Enum die de mogelijke locaties van de speler bijhoudt
         enum PlayerLocation
         {
             PalletTown,
@@ -12,15 +13,19 @@
             ViridianCity
         }
 
+        // Huidige doel van de speler
         static string currentGoal = "Talk to Professor Oak and choose your first Pokémon.";
+        // Starter Pokémon gekozen door de speler
         static string playerStarter = "";
+        // Huidige locatie van de speler
         static PlayerLocation currentLocation = PlayerLocation.PalletTown;
 
         static void Main(string[] args)
         {
             Console.Title = "Pokémon Text Adventure";
-            ShowWelcome();
+            ShowWelcome(); // Toon welkomsscherm met instructies
 
+            // Hoofdgame loop
             while (true)
             {
                 Console.Write("> ");
@@ -28,6 +33,7 @@
 
                 if (string.IsNullOrEmpty(input)) continue;
 
+                // Command-handler
                 if (input == "start")
                 {
                     StartGame();
@@ -55,7 +61,7 @@
                 else if (input == "quit" || input == "exit")
                 {
                     Console.WriteLine("Goodbye, Trainer!");
-                    return;
+                    return; // Sluit het spel
                 }
                 else
                 {
@@ -64,6 +70,7 @@
             }
         }
 
+        // Welkomstscherm van het spel
         static void ShowWelcome()
         {
             Console.Clear();
@@ -79,6 +86,7 @@
             Console.WriteLine();
         }
 
+        // Toon een lijst met beschikbare commands en uitleg
         static void ShowInstructions()
         {
             Console.Clear();
@@ -99,11 +107,13 @@
             Console.WriteLine("====================\n");
         }
 
+        // Toon het huidige doel van de speler
         static void ShowGoal()
         {
             Console.WriteLine($"\n=== CURRENT GOAL ===\n{currentGoal}\n");
         }
 
+        // Toon hints gebaseerd op de huidige voortgang
         static void ShowHint()
         {
             Console.WriteLine("\n=== HINT ===");
@@ -128,6 +138,7 @@
             Console.WriteLine("====================\n");
         }
 
+        // Start de game en begin het verhaal
         static void StartGame()
         {
             Console.Clear();
@@ -142,9 +153,10 @@
             TypeDialogue("Narrator", "On a table, three Poké Balls rest in gleaming red-and-white.");
             Console.WriteLine();
 
-            ChooseStarter();
+            ChooseStarter(); // Laat speler een starter Pokémon kiezen
         }
 
+        // Laat de speler zijn starter Pokémon kiezen
         static void ChooseStarter()
         {
             Console.WriteLine();
@@ -189,6 +201,7 @@
             Console.WriteLine("\nType 'explore' to travel to Route 1.");
         }
 
+        // Handle voor exploratie op de huidige locatie
         static void Explore()
         {
             switch (currentLocation)
@@ -197,14 +210,15 @@
                     Console.WriteLine("You look around Professor Oak’s lab. The three Poké Balls are waiting for you.");
                     break;
                 case PlayerLocation.Route1:
-                    Route1();
+                    Route1(); // Route 1 encounter
                     break;
                 case PlayerLocation.ViridianCity:
-                    ViridianCity();
+                    ViridianCity(); // Viridian City interacties
                     break;
             }
         }
 
+        // Laat de speler teruggaan naar de vorige locatie
         static void GoBack()
         {
             if (currentLocation == PlayerLocation.ViridianCity)
@@ -223,6 +237,7 @@
             }
         }
 
+        // Route 1 encounter met wild Pokémon
         static void Route1()
         {
             Console.Clear();
@@ -264,6 +279,7 @@
             Console.WriteLine("\nType 'explore' to enter Viridian City or 'back' to return to Pallet Town.");
         }
 
+        // Interacties in Viridian City
         static void ViridianCity()
         {
             Console.Clear();
@@ -304,6 +320,7 @@
             Console.WriteLine("\nType 'back' to return to Route 1.");
         }
 
+        // Typing effect voor dialoog
         static void TypeDialogue(string speaker, string text, int speed = 20)
         {
             Console.Write(speaker + ": ");
@@ -313,7 +330,6 @@
                 Thread.Sleep(speed);
             }
             Console.WriteLine();
-
         }
     }
 }

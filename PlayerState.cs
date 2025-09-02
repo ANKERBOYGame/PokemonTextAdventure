@@ -1,5 +1,6 @@
 ﻿namespace PokemonTextAdventure
 {
+    // Houdt de huidige staat van de speler bij, zoals locatie, doel en gekozen starter
     public static class PlayerState
     {
         public static string Starter { get; set; } = "";
