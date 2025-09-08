@@ -1,335 +1,566 @@
-﻿namespace PokemonTextAdventure
-{
-    using System;
-    using System.Threading;
+﻿using System;
+using System.Collections.Generic;
 
+namespace PokemonTextAdventure
+{
     class Program
     {
-        // Enum die de mogelijke locaties van de speler bijhoudt
-        enum PlayerLocation
+        enum Location { PalletTown, Route1, ViridianCity }
+
+        class Move
         {
-            PalletTown,
-            Route1,
-            ViridianCity
+            public string Name { get; set; }
+            public int Power { get; set; }
+            public Move(string name, int power) { Name = name; Power = power; }
         }
 
-        // Huidige doel van de speler
-        static string currentGoal = "Talk to Professor Oak and choose your first Pokémon.";
-        // Starter Pokémon gekozen door de speler
-        static string playerStarter = "";
-        // Huidige locatie van de speler
-        static PlayerLocation currentLocation = PlayerLocation.PalletTown;
+        class Pokemon
+        {
+            public string Name { get; set; }
+            public int MaxHP { get; set; }
+            public int CurrentHP { get; set; }
+            public List<Move> Moves { get; set; }
+            public Pokemon(string name, int hp, List<Move> moves) { Name = name; MaxHP = hp; CurrentHP = hp; Moves = moves; }
+            public bool IsFainted() => CurrentHP <= 0;
+        }
 
-        static void Main(string[] args)
+        static List<Pokemon> party = new List<Pokemon>();
+        static List<Pokemon> storage = new List<Pokemon>();
+        static Location currentLocation = Location.PalletTown;
+        static string currentGoal = "Talk to Professor Oak and choose your first Pokémon.";
+        static bool gameStarted = false;
+
+        // Inventory
+        static int pokeBalls = 5;
+        static int money = 500;
+        static int maxPartySize = 6;
+
+        static void Main()
         {
             Console.Title = "Pokémon Text Adventure";
-            ShowWelcome(); // Toon welkomsscherm met instructies
+            ShowWelcome();
 
-            // Hoofdgame loop
             while (true)
             {
-                Console.Write("> ");
-                var input = Console.ReadLine()?.Trim().ToLowerInvariant();
+                if (!gameStarted)
+                {
+                    Console.Write("\n> ");
+                    string input = Console.ReadLine()?.Trim().ToLower();
+                    if (string.IsNullOrEmpty(input)) continue;
 
-                if (string.IsNullOrEmpty(input)) continue;
-
-                // Command-handler
-                if (input == "start")
-                {
-                    StartGame();
-                }
-                else if (input == "help" || input == "instructions")
-                {
-                    ShowInstructions();
-                }
-                else if (input == "goal" || input == "doel")
-                {
-                    ShowGoal();
-                }
-                else if (input == "hint")
-                {
-                    ShowHint();
-                }
-                else if (input == "explore")
-                {
-                    Explore();
-                }
-                else if (input == "back" || input == "go back")
-                {
-                    GoBack();
-                }
-                else if (input == "quit" || input == "exit")
-                {
-                    Console.WriteLine("Goodbye, Trainer!");
-                    return; // Sluit het spel
+                    if (HandleGlobalCommands(input)) continue;
+                    HandleStartMenu(input);
                 }
                 else
                 {
-                    Console.WriteLine("Unknown command. Type 'help' for instructions.");
+                    ShowLocationMenu();
+                    Console.Write("\n> ");
+                    string input = Console.ReadLine()?.Trim().ToLower();
+                    if (string.IsNullOrEmpty(input)) continue;
+
+                    if (HandleGlobalCommands(input)) continue;
+                    HandleLocation(input);
                 }
             }
         }
 
-        // Welkomstscherm van het spel
+        // ---------- Global Commands ----------
+        static bool HandleGlobalCommands(string input) => input switch
+        {
+            "hint" => ShowHint(),
+            "goal" or "doel" => ShowGoal(),
+            "party" or "pokémon" => ShowParty(),
+            "quit" or "exit" => QuitGame(),
+            _ => false
+        };
+
+        static bool ShowHint()
+        {
+            Console.WriteLine("\n=== HINT ===");
+            if (party.Count == 0) Console.WriteLine("Professor Oak is waiting. Choose your starter!");
+            else if (currentLocation == Location.Route1) Console.WriteLine("Wild Pokémon are on Route 1. Be ready!");
+            else if (currentLocation == Location.ViridianCity) Console.WriteLine("Visit Pokémon Center or Poké Mart.");
+            else Console.WriteLine("Explore your surroundings!");
+            Console.WriteLine("============\n");
+            return true;
+        }
+
+        static bool ShowGoal()
+        {
+            Console.WriteLine($"\n=== CURRENT GOAL ===\n{currentGoal}\n");
+            return true;
+        }
+
+        static bool ShowParty()
+        {
+            Console.WriteLine("\n=== YOUR POKÉMON PARTY ===");
+            if (party.Count == 0)
+            {
+                Console.WriteLine("You don’t have any Pokémon yet!");
+            }
+            else
+            {
+                for (int i = 0; i < party.Count; i++)
+                {
+                    var p = party[i];
+                    Console.WriteLine($"{i + 1}. {p.Name} - HP: {p.CurrentHP}/{p.MaxHP}");
+                    Console.WriteLine("   Moves: " + string.Join(", ", p.Moves.ConvertAll(m => m.Name)));
+                }
+            }
+            Console.WriteLine("==========================\n");
+            return true;
+        }
+
+        static bool QuitGame()
+        {
+            Console.WriteLine("Goodbye, Trainer!");
+            Environment.Exit(0);
+            return true;
+        }
+
+        // ---------- Start Menu ----------
+        static void HandleStartMenu(string input)
+        {
+            if (input == "start" || input == "1")
+            {
+                StartGame();
+                gameStarted = true;
+            }
+            else if (input == "help" || input == "instructions" || input == "2")
+            {
+                ShowInstructions();
+            }
+            else
+            {
+                Console.WriteLine("Invalid input. Type 'start' or 'help'.");
+            }
+        }
+
         static void ShowWelcome()
         {
             Console.Clear();
-            Console.WriteLine("===========================================");
-            Console.WriteLine("        POKÉMON TEXT ADVENTURE");
-            Console.WriteLine("===========================================");
+            Console.WriteLine("===============================");
+            Console.WriteLine("     POKÉMON TEXT ADVENTURE    ");
+            Console.WriteLine("===============================");
             Console.WriteLine("Welcome, Trainer!");
-            Console.WriteLine("Type 'start' to begin your Pokémon journey.");
-            Console.WriteLine("Type 'help' to see instructions.");
-            Console.WriteLine("Type 'goal' to check your current mission.");
-            Console.WriteLine("Type 'hint' if you get stuck.");
-            Console.WriteLine("Type 'quit' to exit.");
-            Console.WriteLine();
+            Console.WriteLine("Type 'start' to begin your journey.");
+            Console.WriteLine("Type 'help' for instructions.");
+            Console.WriteLine("You can also type 'hint', 'goal', 'party', or 'quit' anytime.");
         }
 
-        // Toon een lijst met beschikbare commands en uitleg
         static void ShowInstructions()
         {
             Console.Clear();
             Console.WriteLine("\n=== INSTRUCTIONS ===");
-            Console.WriteLine("Available Commands:");
-            Console.WriteLine(" - start: Begin your adventure");
-            Console.WriteLine(" - explore: Look around your current location");
-            Console.WriteLine(" - back: Go back to the previous location");
-            Console.WriteLine(" - goal / doel: Show your current mission");
-            Console.WriteLine(" - hint: Get a useful clue if you are stuck");
-            Console.WriteLine(" - help / instructions: Show instructions");
-            Console.WriteLine(" - quit: Exit the game");
-            Console.WriteLine();
-            Console.WriteLine("Gameplay:");
-            Console.WriteLine(" • The game will often give you options to choose from.");
-            Console.WriteLine(" • Type the option name (for example 'center').");
-            Console.WriteLine(" • Use 'goal' to stay on track and 'hint' if you need help.");
+            Console.WriteLine("• Type numbers or names for choices.");
+            Console.WriteLine("• Battles use HP and moves.");
+            Console.WriteLine("• You can catch Pokémon with Poké Balls.");
+            Console.WriteLine("• Buy more Poké Balls at the Poké Mart.");
+            Console.WriteLine("• Global commands: hint, goal, party, quit");
             Console.WriteLine("====================\n");
         }
 
-        // Toon het huidige doel van de speler
-        static void ShowGoal()
-        {
-            Console.WriteLine($"\n=== CURRENT GOAL ===\n{currentGoal}\n");
-        }
-
-        // Toon hints gebaseerd op de huidige voortgang
-        static void ShowHint()
-        {
-            Console.WriteLine("\n=== HINT ===");
-
-            if (playerStarter == "")
-            {
-                Console.WriteLine("Professor Oak is waiting for you. Try typing the name of a Pokémon (Bulbasaur, Charmander, or Squirtle).");
-            }
-            else if (currentLocation == PlayerLocation.Route1)
-            {
-                Console.WriteLine("Keep moving north on Route 1. Wild Pokémon may appear—be ready!");
-            }
-            else if (currentLocation == PlayerLocation.ViridianCity)
-            {
-                Console.WriteLine("You made it to Viridian City! Try exploring the Poké Mart or the Pokémon Center.");
-            }
-            else
-            {
-                Console.WriteLine("Explore your surroundings and interact with characters. The path forward will become clear!");
-            }
-
-            Console.WriteLine("====================\n");
-        }
-
-        // Start de game en begin het verhaal
         static void StartGame()
         {
             Console.Clear();
-
             TypeDialogue("Professor Oak", "\"Welcome to the world of Pokémon!\"");
-            Thread.Sleep(500);
-            TypeDialogue("Professor Oak", "\"My name is Oak, but people call me the Pokémon Professor!\"");
-            Thread.Sleep(500);
-            Console.WriteLine();
-
-            TypeDialogue("Narrator", "You find yourself in Professor Oak’s lab in Pallet Town.");
-            TypeDialogue("Narrator", "On a table, three Poké Balls rest in gleaming red-and-white.");
-            Console.WriteLine();
-
-            ChooseStarter(); // Laat speler een starter Pokémon kiezen
+            TypeDialogue("Professor Oak", "\"I'm Professor Oak!\"");
+            TypeDialogue("Narrator", "You're in Professor Oak’s lab. Three Poké Balls sit on the table.");
+            currentGoal = "Choose your first Pokémon.";
+            ChooseStarter();
         }
 
-        // Laat de speler zijn starter Pokémon kiezen
         static void ChooseStarter()
         {
-            Console.WriteLine();
-            TypeDialogue("Professor Oak", "\"Now, choose your first Pokémon to begin your journey!\"");
-
-            while (playerStarter == "")
+            var starters = new Dictionary<string, Pokemon>()
             {
-                Console.WriteLine("\nChoose your starter:");
-                Console.WriteLine("1. Bulbasaur");
-                Console.WriteLine("2. Charmander");
-                Console.WriteLine("3. Squirtle");
-                Console.Write("> ");
-                var input = Console.ReadLine()?.Trim().ToLowerInvariant();
+                ["bulbasaur"] = new Pokemon("Bulbasaur", 45, new List<Move> { new Move("Tackle", 10), new Move("Growl", 0) }),
+                ["charmander"] = new Pokemon("Charmander", 39, new List<Move> { new Move("Scratch", 10), new Move("Growl", 0) }),
+                ["squirtle"] = new Pokemon("Squirtle", 44, new List<Move> { new Move("Tackle", 10), new Move("Tail Whip", 0) })
+            };
 
-                switch (input)
+            while (party.Count == 0)
+            {
+                Console.WriteLine("\nChoose your starter Pokémon:");
+                Console.WriteLine("1. Bulbasaur\n2. Charmander\n3. Squirtle\n> ");
+                string input = Console.ReadLine()?.Trim().ToLower();
+                if (input == "1") input = "bulbasaur";
+                else if (input == "2") input = "charmander";
+                else if (input == "3") input = "squirtle";
+
+                if (starters.ContainsKey(input))
                 {
-                    case "1":
-                    case "bulbasaur":
-                        playerStarter = "Bulbasaur";
-                        break;
-                    case "2":
-                    case "charmander":
-                        playerStarter = "Charmander";
-                        break;
-                    case "3":
-                    case "squirtle":
-                        playerStarter = "Squirtle";
-                        break;
-                    default:
-                        Console.WriteLine("Please choose 1, 2, or 3.");
-                        break;
-                }
-            }
-
-            Console.Clear();
-            TypeDialogue("Narrator", $"You pick up {playerStarter}’s Poké Ball. A new friendship begins!");
-            TypeDialogue("Professor Oak", $"\"Excellent choice! Take care of {playerStarter}, and your journey will be filled with adventure.\"");
-
-            currentGoal = "Head north to Route 1 and begin your journey to Viridian City.";
-            currentLocation = PlayerLocation.Route1;
-
-            Console.WriteLine("\nType 'explore' to travel to Route 1.");
-        }
-
-        // Handle voor exploratie op de huidige locatie
-        static void Explore()
-        {
-            switch (currentLocation)
-            {
-                case PlayerLocation.PalletTown:
-                    Console.WriteLine("You look around Professor Oak’s lab. The three Poké Balls are waiting for you.");
+                    var chosen = starters[input];
+                    party.Add(chosen);
+                    Console.Clear();
+                    TypeDialogue("Narrator", $"You pick up {chosen.Name}’s Poké Ball. A new friendship begins!");
+                    TypeDialogue("Professor Oak", $"\"Excellent choice! Take care of {chosen.Name}!\"");
+                    currentGoal = "Head north to Route 1.";
                     break;
-                case PlayerLocation.Route1:
-                    Route1(); // Route 1 encounter
-                    break;
-                case PlayerLocation.ViridianCity:
-                    ViridianCity(); // Viridian City interacties
-                    break;
-            }
-        }
-
-        // Laat de speler teruggaan naar de vorige locatie
-        static void GoBack()
-        {
-            if (currentLocation == PlayerLocation.ViridianCity)
-            {
-                currentLocation = PlayerLocation.Route1;
-                Console.WriteLine("You walk back from Viridian City towards Route 1.");
-            }
-            else if (currentLocation == PlayerLocation.Route1)
-            {
-                currentLocation = PlayerLocation.PalletTown;
-                Console.WriteLine("You walk back south to Pallet Town.");
-            }
-            else
-            {
-                Console.WriteLine("You’re already at the starting point!");
-            }
-        }
-
-        // Route 1 encounter met wild Pokémon
-        static void Route1()
-        {
-            Console.Clear();
-            TypeDialogue("Narrator", "You walk along Route 1. The tall grass rustles nearby...");
-            Thread.Sleep(500);
-            TypeDialogue("Narrator", "A wild Pidgey appears!");
-
-            Console.WriteLine("\nWhat do you do?");
-            Console.WriteLine("1. Fight");
-            Console.WriteLine("2. Run");
-
-            bool resolved = false;
-            while (!resolved)
-            {
-                Console.Write("> ");
-                var input = Console.ReadLine()?.Trim().ToLowerInvariant();
-
-                if (input == "1" || input == "fight")
-                {
-                    TypeDialogue("Narrator", $"You send out {playerStarter}! After a short battle, the wild Pidgey flees.");
-                    resolved = true;
-                }
-                else if (input == "2" || input == "run")
-                {
-                    TypeDialogue("Narrator", "You dash away from the tall grass. The Pidgey loses interest.");
-                    resolved = true;
                 }
                 else
                 {
-                    Console.WriteLine("Choose 1 or 2.");
+                    Console.WriteLine("Choose 1, 2, 3, or type the Pokémon's name.");
                 }
             }
-
-            Console.WriteLine();
-            TypeDialogue("Narrator", "After your encounter, you continue walking and soon see the gates of Viridian City ahead.");
-            currentLocation = PlayerLocation.ViridianCity;
-            currentGoal = "Explore Viridian City and visit the Pokémon Center or Poké Mart.";
-
-            Console.WriteLine("\nType 'explore' to enter Viridian City or 'back' to return to Pallet Town.");
         }
 
-        // Interacties in Viridian City
-        static void ViridianCity()
+        // ---------- Location Menu ----------
+        static void ShowLocationMenu()
+        {
+            switch (currentLocation)
+            {
+                case Location.PalletTown:
+                    Console.WriteLine("\nWhat do you want to do?");
+                    Console.WriteLine("1. Explore Lab");
+                    Console.WriteLine("2. Go north to Route 1");
+                    break;
+                case Location.Route1:
+                    Console.WriteLine("\nWhat do you want to do?");
+                    Console.WriteLine("1. Move forward / Encounter Pokémon");
+                    Console.WriteLine("2. Go back to Pallet Town");
+                    break;
+                case Location.ViridianCity:
+                    Console.WriteLine("\nWhere do you want to go?");
+                    Console.WriteLine("1. Pokémon Center");
+                    Console.WriteLine("2. Poké Mart");
+                    Console.WriteLine("3. Go back to Route 1");
+                    break;
+            }
+        }
+
+        static void HandleLocation(string input)
         {
             Console.Clear();
-            TypeDialogue("Narrator", "You arrive in Viridian City. The bustling town is alive with trainers and shops.");
-
-            Console.WriteLine("\nWhere do you want to go?");
-            Console.WriteLine("1. Pokémon Center");
-            Console.WriteLine("2. Poké Mart");
-
-            bool chosen = false;
-            while (!chosen)
+            switch (currentLocation)
             {
-                Console.Write("> ");
-                var input = Console.ReadLine()?.Trim().ToLowerInvariant();
+                case Location.PalletTown:
+                    if (input == "1" || input == "explore lab")
+                        TypeDialogue("Narrator", "You look around the lab. Your starter Pokémon awaits.");
+                    else if (input == "2" || input == "go north" || input == "route 1")
+                        MoveTo(Location.Route1, "You leave Pallet Town and start walking north along Route 1.");
+                    else Console.WriteLine("Type 1 to explore lab, 2 to go north.");
+                    break;
 
-                switch (input)
-                {
-                    case "1":
-                    case "center":
-                        TypeDialogue("Nurse Joy", "\"Welcome to the Pokémon Center! Your Pokémon are fighting fit!\"");
-                        chosen = true;
-                        break;
+                case Location.Route1:
+                    if (input == "1" || input == "move forward" || input == "encounter") EncounterWildPokemon();
+                    else if (input == "2" || input == "go back") MoveTo(Location.PalletTown, "You walk back south to Pallet Town.");
+                    else Console.WriteLine("Type 1 to move forward, 2 to go back.");
+                    break;
 
-                    case "2":
-                    case "mart":
-                        TypeDialogue("Shopkeeper", "\"Hello! We sell Potions and Poké Balls. Stock up for your journey!\"");
-                        chosen = true;
-                        break;
-
-                    default:
-                        Console.WriteLine("Please choose 1 or 2.");
-                        break;
-                }
+                case Location.ViridianCity:
+                    if (input == "1" || input == "center" || input == "pokémon center") PokemonCenter();
+                    else if (input == "2" || input == "mart" || input == "poké mart") PokeMart();
+                    else if (input == "3" || input == "go back") MoveTo(Location.Route1, "You leave Viridian City and return to Route 1.");
+                    else Console.WriteLine("Type 1 for Pokémon Center, 2 for Poké Mart, 3 to go back.");
+                    break;
             }
-
-            Console.WriteLine();
-            currentGoal = "Prepare for your next journey beyond Viridian City!";
-            Console.WriteLine("\nType 'back' to return to Route 1.");
         }
 
-        // Typing effect voor dialoog
-        static void TypeDialogue(string speaker, string text, int speed = 20)
+        static void MoveTo(Location loc, string message)
+        {
+            TypeDialogue("Narrator", message);
+            currentLocation = loc;
+            if (loc == Location.Route1) currentGoal = "Move forward and encounter Pokémon!";
+            else if (loc == Location.ViridianCity) currentGoal = "Explore Viridian City and visit Pokémon Center or Poké Mart.";
+        }
+
+        // ---------- Pokémon Center ----------
+        static void PokemonCenter()
+        {
+            Console.Clear();
+            HealPokemon();
+            Console.WriteLine("\nWhat do you want to do?");
+            Console.WriteLine("1. Deposit Pokémon");
+            Console.WriteLine("2. Withdraw Pokémon");
+            Console.WriteLine("3. Leave Pokémon Center");
+            Console.Write("> ");
+            string input = Console.ReadLine()?.Trim().ToLower();
+
+            if (input == "1") DepositPokemon();
+            else if (input == "2") WithdrawPokemon();
+            else if (input == "3") return;
+            else Console.WriteLine("Invalid option.");
+        }
+
+        static void HealPokemon()
+        {
+            foreach (var p in party)
+                p.CurrentHP = p.MaxHP;
+            TypeDialogue("Nurse Joy", "\"Welcome! Your Pokémon are fighting fit!\"");
+        }
+
+        static void DepositPokemon()
+        {
+            if (party.Count <= 1)
+            {
+                Console.WriteLine("You must keep at least one Pokémon in your party.");
+                return;
+            }
+
+            ShowParty();
+            Console.WriteLine("Choose a Pokémon number to deposit:");
+            string input = Console.ReadLine()?.Trim();
+            if (int.TryParse(input, out int choice) && choice > 0 && choice <= party.Count)
+            {
+                var selected = party[choice - 1];
+                storage.Add(selected);
+                party.RemoveAt(choice - 1);
+                Console.WriteLine($"{selected.Name} was deposited into storage!");
+            }
+            else Console.WriteLine("Invalid choice.");
+        }
+
+        static void WithdrawPokemon()
+        {
+            if (storage.Count == 0)
+            {
+                Console.WriteLine("No Pokémon in storage.");
+                return;
+            }
+
+            Console.WriteLine("\n=== STORAGE BOX ===");
+            for (int i = 0; i < storage.Count; i++)
+                Console.WriteLine($"{i + 1}. {storage[i].Name} - HP: {storage[i].CurrentHP}/{storage[i].MaxHP}");
+            Console.WriteLine("===================");
+            Console.WriteLine("Choose a Pokémon number to withdraw:");
+            string input = Console.ReadLine()?.Trim();
+            if (int.TryParse(input, out int choice) && choice > 0 && choice <= storage.Count)
+            {
+                var selected = storage[choice - 1];
+                party.Add(selected);
+                storage.RemoveAt(choice - 1);
+                Console.WriteLine($"{selected.Name} was withdrawn and added to your party!");
+            }
+            else Console.WriteLine("Invalid choice.");
+        }
+
+        // ---------- Poké Mart ----------
+        static void PokeMart()
+        {
+            Console.Clear();
+            TypeDialogue("Shopkeeper", "\"Welcome to the Poké Mart!\"");
+            Console.WriteLine($"You have {money} Pokédollars and {pokeBalls} Poké Balls.");
+            Console.WriteLine("\n1. Buy Poké Ball (200₽)");
+            Console.WriteLine("2. Leave");
+            Console.Write("> ");
+            string input = Console.ReadLine()?.Trim().ToLower();
+
+            if (input == "1" || input == "buy")
+            {
+                if (money >= 200)
+                {
+                    money -= 200;
+                    pokeBalls++;
+                    Console.WriteLine("You bought a Poké Ball!");
+                    Console.WriteLine($"Now you have {pokeBalls} Poké Balls.");
+                }
+                else Console.WriteLine("Not enough money!");
+            }
+            else if (input == "2" || input == "leave")
+            {
+                Console.WriteLine("You leave the Poké Mart.");
+            }
+            else Console.WriteLine("Invalid option.");
+        }
+
+        // ---------- Battles ----------
+        static void EncounterWildPokemon()
+        {
+            TypeDialogue("Narrator", "The tall grass rustles...");
+            var wild = new Pokemon("Pidgey", 40, new List<Move> { new Move("Tackle", 8) });
+            TypeDialogue("Narrator", $"A wild {wild.Name} appears!");
+            Battle(wild);
+
+            if (!party[0].IsFainted()) MoveTo(Location.ViridianCity, "After the encounter, you continue and soon see Viridian City ahead.");
+            else { Console.WriteLine("Game Over! Your Pokémon fainted."); Environment.Exit(0); }
+        }
+
+        static void Battle(Pokemon wild)
+        {
+            int activeIndex = 0; // which party Pokémon is active
+            var playerPokemon = party[activeIndex];
+
+            Console.WriteLine("=== BATTLE START ===");
+            while (!wild.IsFainted() && party.Exists(p => !p.IsFainted()))
+            {
+                Console.Clear();
+
+                playerPokemon = party[activeIndex];
+                Console.WriteLine($"\n{playerPokemon.Name} HP: {playerPokemon.CurrentHP}/{playerPokemon.MaxHP}");
+                Console.WriteLine($"{wild.Name} HP: {wild.CurrentHP}/{wild.MaxHP}");
+                Console.WriteLine($"Poké Balls: {pokeBalls}");
+
+                Console.WriteLine("\nWhat do you want to do?");
+                Console.WriteLine("1. Fight");
+                Console.WriteLine("2. Throw Poké Ball");
+                Console.WriteLine("3. Pokémon (switch)");
+                Console.WriteLine("4. Run");
+                Console.Write("> ");
+                string action = Console.ReadLine()?.Trim().ToLower();
+
+                if (action == "1" || action == "fight")
+                {
+                    Console.WriteLine("\nChoose a move:");
+                    for (int i = 0; i < playerPokemon.Moves.Count; i++)
+                        Console.WriteLine($"{i + 1}. {playerPokemon.Moves[i].Name}");
+                    Console.Write("> ");
+                    string input = Console.ReadLine()?.Trim().ToLower();
+
+                    Move move = ParseMove(input, playerPokemon);
+                    if (move == null) { Console.WriteLine("Invalid move."); continue; }
+
+                    if (move.Power > 0) TypeDialogue("Narrator", $"{playerPokemon.Name} uses {move.Name}!");
+                    else TypeDialogue("Narrator", $"{playerPokemon.Name} used {move.Name}, but it had no effect!");
+
+                    wild.CurrentHP -= move.Power;
+                    if (wild.CurrentHP < 0) wild.CurrentHP = 0;
+
+                    if (wild.IsFainted()) { TypeDialogue("Narrator", $"The wild {wild.Name} fainted!"); break; }
+                }
+                else if (action == "2" || action == "poké ball" || action == "throw")
+                {
+                    if (pokeBalls <= 0)
+                    {
+                        Console.WriteLine("You have no Poké Balls left!");
+                        continue;
+                    }
+
+                    pokeBalls--;
+                    Console.WriteLine($"You throw a Poké Ball! ({pokeBalls} left)");
+
+                    if (TryCatchPokemon(wild))
+                    {
+                        Console.WriteLine($"Gotcha! {wild.Name} was caught!");
+                        if (party.Count < maxPartySize)
+                        {
+                            party.Add(wild);
+                            Console.WriteLine($"{wild.Name} was added to your party!");
+                        }
+                        else
+                        {
+                            storage.Add(wild);
+                            Console.WriteLine($"{wild.Name} was sent to storage!");
+                        }
+                        return;
+                    }
+                    else
+                    {
+                        Console.WriteLine($"{wild.Name} broke free!");
+                    }
+                }
+                else if (action == "3" || action == "pokémon" || action == "switch")
+                {
+                    Console.WriteLine("\n=== YOUR PARTY ===");
+                    for (int i = 0; i < party.Count; i++)
+                    {
+                        var p = party[i];
+                        Console.WriteLine($"{i + 1}. {p.Name} - HP: {p.CurrentHP}/{p.MaxHP}" + (i == activeIndex ? " (active)" : ""));
+                    }
+                    Console.WriteLine("Choose a Pokémon to switch to:");
+                    string input = Console.ReadLine()?.Trim();
+                    if (int.TryParse(input, out int choice) && choice > 0 && choice <= party.Count)
+                    {
+                        if (choice - 1 == activeIndex) Console.WriteLine($"{party[choice - 1].Name} is already active!");
+                        else if (party[choice - 1].IsFainted()) Console.WriteLine("You cannot switch to a fainted Pokémon!");
+                        else
+                        {
+                            activeIndex = choice - 1;
+                            Console.WriteLine($"You switched to {party[activeIndex].Name}!");
+                        }
+                    }
+                    else Console.WriteLine("Invalid choice.");
+                }
+                else if (action == "4" || action == "run" || action == "escape")
+                {
+                    Random rng = new Random();
+                    if (rng.NextDouble() < 0.75) // 75% chance to escape
+                    {
+                        Console.WriteLine("You successfully ran away!");
+                        return; // end battle
+                    }
+                    else
+                    {
+                        Console.WriteLine("You couldn’t escape!");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Invalid option. Choose 1, 2, 3, or 4.");
+                    continue;
+                }
+
+                // Enemy's turn (if wild still alive)
+                if (!wild.IsFainted())
+                {
+                    var enemyMove = wild.Moves[0];
+                    TypeDialogue("Narrator", $"The wild {wild.Name} uses {enemyMove.Name}!");
+                    playerPokemon.CurrentHP -= enemyMove.Power;
+                    if (playerPokemon.CurrentHP < 0) playerPokemon.CurrentHP = 0;
+
+                    if (playerPokemon.IsFainted())
+                    {
+                        TypeDialogue("Narrator", $"{playerPokemon.Name} fainted!");
+
+                        // Force switch if you still have Pokémon left
+                        if (party.Exists(p => !p.IsFainted()))
+                        {
+                            Console.WriteLine("Choose a new Pokémon:");
+                            while (true)
+                            {
+                                for (int i = 0; i < party.Count; i++)
+                                {
+                                    var p = party[i];
+                                    Console.WriteLine($"{i + 1}. {p.Name} - HP: {p.CurrentHP}/{p.MaxHP}");
+                                }
+                                string input = Console.ReadLine()?.Trim();
+                                if (int.TryParse(input, out int choice) && choice > 0 && choice <= party.Count && !party[choice - 1].IsFainted())
+                                {
+                                    activeIndex = choice - 1;
+                                    Console.WriteLine($"You sent out {party[activeIndex].Name}!");
+                                    break;
+                                }
+                                else Console.WriteLine("Invalid choice. Pick a healthy Pokémon.");
+                            }
+                        }
+                    }
+                }
+            }
+            Console.WriteLine("=== BATTLE END ===");
+        }
+
+        static bool TryCatchPokemon(Pokemon wild)
+        {
+            double hpFactor = 1.0 - ((double)wild.CurrentHP / wild.MaxHP);
+            double baseCatchRate = 0.25;
+            double catchChance = baseCatchRate + hpFactor * 0.5;
+
+            Random rng = new Random();
+            return rng.NextDouble() < catchChance;
+        }
+
+        static Move ParseMove(string input, Pokemon p)
+        {
+            if (int.TryParse(input, out int idx) && idx > 0 && idx <= p.Moves.Count)
+                return p.Moves[idx - 1];
+            foreach (var m in p.Moves)
+                if (m.Name.ToLower() == input) return m;
+            return null;
+        }
+
+        // ---------- Dialogue ----------
+        static void TypeDialogue(string speaker, string text, int speed = 20, int pause = 800)
         {
             Console.Write(speaker + ": ");
             foreach (char c in text)
             {
                 Console.Write(c);
-                Thread.Sleep(speed);
+                System.Threading.Thread.Sleep(speed);
             }
             Console.WriteLine();
+
+            // Add pause after the whole line
+            System.Threading.Thread.Sleep(pause);
         }
     }
 }
