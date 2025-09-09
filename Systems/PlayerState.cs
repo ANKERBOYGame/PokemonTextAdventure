@@ -1,4 +1,4 @@
-﻿namespace PokemonTextAdventure
+﻿namespace PokemonTextAdventure.Systems
 {
     // Houdt de huidige staat van de speler bij, zoals locatie, doel en gekozen starter
     public static class PlayerState
