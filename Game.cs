@@ -54,9 +54,14 @@ namespace PokemonTextAdventure
             "hint" => Locations.ShowHint(),
             "goal" or "doel" => ShowGoal(),
             "party" or "pokémon" => ShowParty(),
+            "save" => SaveGame(),
+            "load" => LoadGame(),
             "quit" or "exit" => QuitGame(),
             _ => false
         };
+
+        static bool SaveGame() { SaveSystem.Save(); return true; }
+        static bool LoadGame() { SaveSystem.Load(); return true; }
 
         static bool ShowGoal()
         {
@@ -161,5 +166,10 @@ namespace PokemonTextAdventure
             Money -= amount;
             return true;
         }
+
+        // ----------------- Save/Load setters -----------------
+        public static void SetMoney(int amount) => Money = amount;
+        public static void SetPokeBalls(int amount) => PokeBalls = amount;
+        public static void SetGameStarted(bool started) => GameStarted = started;
     }
 }
