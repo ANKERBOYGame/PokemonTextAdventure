@@ -160,11 +160,22 @@ namespace PokemonTextAdventure.Systems
 
         static bool TryCatchPokemon(Pokemon wild)
         {
-            double hpFactor = 1.0 - ((double)wild.CurrentHP / wild.MaxHP);
-            double baseCatchRate = 0.25;
-            double catchChance = baseCatchRate + hpFactor * 0.5;
+            // Basis catch rate van het wild Pokémon type (0.05 - 0.35)
+            double baseRate = 0.2; // je kunt dit aanpassen per Pokémon
 
+            // Hoe laag het HP is, hoe groter de kans
+            double hpFactor = 1.0 - ((double)wild.CurrentHP / wild.MaxHP);
+
+            // Kleine random variatie voor realisme
             Random rng = new Random();
+            double randomFactor = rng.NextDouble() * 0.1; // 0.0 - 0.1
+
+            double catchChance = baseRate + hpFactor * 0.5 + randomFactor;
+
+            // Kans altijd tussen 0 en 0.95
+            catchChance = Math.Min(catchChance, 0.95);
+            catchChance = Math.Max(catchChance, 0.05);
+
             return rng.NextDouble() < catchChance;
         }
 

@@ -207,17 +207,39 @@ namespace PokemonTextAdventure.Systems
                 Console.WriteLine("You leave the Poké Mart.");
             }
             else Console.WriteLine("Invalid option.");
+
         }
 
         static void EncounterWildPokemon()
         {
             Dialogue.TypeDialogue("Narrator", "The tall grass rustles...");
-            var wild = new Pokemon("Pidgey", 40, new List<Move> { new Move("Tackle", 8) });
+
+            // Lijst van mogelijke Pokémon op Route 1
+            List<Pokemon> Route1Wild = new List<Pokemon>
+            {
+                new Pokemon("Pidgey", 40, new List<Move> { new Move("Tackle", 8) }),
+                new Pokemon("Rattata", 30, new List<Move> { new Move("Tackle", 10) }),
+                new Pokemon("Caterpie", 35, new List<Move> { new Move("Tackle", 5) }),
+                new Pokemon("Weedle", 35, new List<Move> { new Move("Poison Sting", 5) })
+            };
+
+            // Kies willekeurig een Pokémon
+            Random rng = new Random();
+            var wildTemplate = Route1Wild[rng.Next(Route1Wild.Count)];
+            var wild = new Pokemon(wildTemplate.Name, wildTemplate.MaxHP, wildTemplate.Moves);
+
             Dialogue.TypeDialogue("Narrator", $"A wild {wild.Name} appears!");
             BattleSystem.Battle(wild);
 
-            if (!Game.Party[0].IsFainted()) MoveTo(Game.Location.ViridianCity, "After the encounter, you continue and soon see Viridian City ahead.");
-            else { Console.WriteLine("Game Over! Your Pokémon fainted."); Environment.Exit(0); }
+            // Controleer of de speler nog een Pokémon heeft die niet is uitgeschakeld
+            if (!Game.Party[0].IsFainted())
+                MoveTo(Game.Location.ViridianCity, "After the encounter, you continue and soon see Viridian City ahead.");
+            else
+            {
+                Console.WriteLine("Game Over! Your Pokémon fainted.");
+                Environment.Exit(0);
+            }
         }
+
     }
 }
