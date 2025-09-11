@@ -8,7 +8,7 @@ namespace PokemonTextAdventure.Systems
     {
         public static void Battle(Pokemon wild)
         {
-            int activeIndex = 0; // which party Pokémon is active
+            int activeIndex = 0; // houdt bij welke Pokémon actief is
             var playerPokemon = Game.Party[activeIndex];
 
             Console.WriteLine("=== BATTLE START ===");
@@ -40,6 +40,7 @@ namespace PokemonTextAdventure.Systems
                     Move move = ParseMove(input, playerPokemon);
                     if (move == null) { Console.WriteLine("Invalid move."); continue; }
 
+                    // Alleen dialog voor moves met effect, zodat gevecht duidelijk voelt
                     if (move.Power > 0) Dialogue.TypeDialogue("Narrator", $"{playerPokemon.Name} uses {move.Name}!");
                     else Dialogue.TypeDialogue("Narrator", $"{playerPokemon.Name} used {move.Name}, but it had no effect!");
 
@@ -50,6 +51,7 @@ namespace PokemonTextAdventure.Systems
                 }
                 else if (action == "2" || action == "poké ball" || action == "throw")
                 {
+                    // Gebruik method voor Poké Ball zodat teller klopt
                     if (!Game.UsePokeball())
                     {
                         Console.WriteLine("You have no Poké Balls left!");
@@ -80,6 +82,7 @@ namespace PokemonTextAdventure.Systems
                 }
                 else if (action == "3" || action == "pokémon" || action == "switch")
                 {
+                    // Toon party om te switchen, zodat speler controle houdt
                     Console.WriteLine("\n=== YOUR PARTY ===");
                     for (int i = 0; i < Game.Party.Count; i++)
                     {
@@ -102,11 +105,12 @@ namespace PokemonTextAdventure.Systems
                 }
                 else if (action == "4" || action == "run" || action == "escape")
                 {
+                    // 75% kans om te ontsnappen, zodat gevechten spannend blijven
                     Random rng = new Random();
-                    if (rng.NextDouble() < 0.75) // 75% chance to escape
+                    if (rng.NextDouble() < 0.75)
                     {
                         Console.WriteLine("You successfully ran away!");
-                        return; // end battle
+                        return;
                     }
                     else
                     {
@@ -119,7 +123,7 @@ namespace PokemonTextAdventure.Systems
                     continue;
                 }
 
-                // Enemy's turn (if wild still alive)
+                // Vijandelijke beurt, zodat gevecht beurt-voor-beurt verloopt
                 if (!wild.IsFainted())
                 {
                     var enemyMove = wild.Moves[0];
@@ -131,7 +135,7 @@ namespace PokemonTextAdventure.Systems
                     {
                         Dialogue.TypeDialogue("Narrator", $"{playerPokemon.Name} fainted!");
 
-                        // Force switch if you still have Pokémon left
+                        // Forceer switch als er nog gezonde Pokémon zijn
                         if (Game.Party.Exists(p => !p.IsFainted()))
                         {
                             Console.WriteLine("Choose a new Pokémon:");
@@ -158,27 +162,26 @@ namespace PokemonTextAdventure.Systems
             Console.WriteLine("=== BATTLE END ===");
         }
 
+        // Berekent vangkans op basis van HP en basiswaarde
         static bool TryCatchPokemon(Pokemon wild)
         {
-            // Basis catch rate van het wild Pokémon type (0.05 - 0.35)
-            double baseRate = 0.2; // je kunt dit aanpassen per Pokémon
+            double baseRate = 0.2; // standaard kans voor deze Pokémon
+            double hpFactor = 1.0 - ((double)wild.CurrentHP / wild.MaxHP); // lagere HP = hogere kans
 
-            // Hoe laag het HP is, hoe groter de kans
-            double hpFactor = 1.0 - ((double)wild.CurrentHP / wild.MaxHP);
-
-            // Kleine random variatie voor realisme
+            // Kleine variatie zodat het niet altijd hetzelfde voelt
             Random rng = new Random();
-            double randomFactor = rng.NextDouble() * 0.1; // 0.0 - 0.1
+            double randomFactor = rng.NextDouble() * 0.1;
 
             double catchChance = baseRate + hpFactor * 0.5 + randomFactor;
 
-            // Kans altijd tussen 0 en 0.95
+            // Beperk kans zodat het nooit 100% of te laag wordt
             catchChance = Math.Min(catchChance, 0.95);
             catchChance = Math.Max(catchChance, 0.05);
 
             return rng.NextDouble() < catchChance;
         }
 
+        // Zoekt de move op gekozen door de speler
         static Move ParseMove(string input, Pokemon p)
         {
             if (int.TryParse(input, out int idx) && idx > 0 && idx <= p.Moves.Count)

@@ -6,6 +6,7 @@ namespace PokemonTextAdventure.Systems
 {
     public static class Locations
     {
+        // Toont hints afhankelijk van voortgang, zodat speler begeleiding krijgt zonder te spoilen
         public static bool ShowHint()
         {
             Console.WriteLine("\n=== HINT ===");
@@ -17,6 +18,7 @@ namespace PokemonTextAdventure.Systems
             return true;
         }
 
+        // Toont keuzes per locatie, zodat speler weet wat mogelijk is
         public static void ShowLocationMenu(Game.Location loc)
         {
             switch (loc)
@@ -40,6 +42,7 @@ namespace PokemonTextAdventure.Systems
             }
         }
 
+        // Verwerkt input van speler per locatie
         public static void HandleLocation(string input)
         {
             Console.Clear();
@@ -68,6 +71,7 @@ namespace PokemonTextAdventure.Systems
             }
         }
 
+        // Starterkeuze, zodat speler een eerste Pokémon krijgt
         public static void ChooseStarter()
         {
             var starters = new Dictionary<string, Pokemon>()
@@ -103,6 +107,7 @@ namespace PokemonTextAdventure.Systems
             }
         }
 
+        // Verplaats speler naar nieuwe locatie en update doel
         static void MoveTo(Game.Location loc, string message)
         {
             Dialogue.TypeDialogue("Narrator", message);
@@ -111,10 +116,11 @@ namespace PokemonTextAdventure.Systems
             else if (loc == Game.Location.ViridianCity) Game.UpdateGoal("Explore Viridian City and visit Pokémon Center or Poké Mart.");
         }
 
+        // Pokémon Center interacties
         static void PokemonCenter()
         {
             Console.Clear();
-            HealPokemon();
+            HealPokemon(); // herstelt alle Pokémon
             Console.WriteLine("\nWhat do you want to do?");
             Console.WriteLine("1. Deposit Pokémon");
             Console.WriteLine("2. Withdraw Pokémon");
@@ -128,6 +134,7 @@ namespace PokemonTextAdventure.Systems
             else Console.WriteLine("Invalid option.");
         }
 
+        // Herstelt alle Pokémon HP, zodat speler verder kan
         static void HealPokemon()
         {
             foreach (var p in Game.Party)
@@ -135,6 +142,7 @@ namespace PokemonTextAdventure.Systems
             Dialogue.TypeDialogue("Nurse Joy", "\"Welcome! Your Pokémon are fighting fit!\"");
         }
 
+        // Verplaatst Pokémon naar opslag, zodat party limiet wordt gerespecteerd
         static void DepositPokemon()
         {
             if (Game.Party.Count <= 1)
@@ -158,6 +166,7 @@ namespace PokemonTextAdventure.Systems
             else Console.WriteLine("Invalid choice.");
         }
 
+        // Haalt Pokémon uit opslag voor gebruik in party
         static void WithdrawPokemon()
         {
             if (Game.Storage.Count == 0)
@@ -182,6 +191,7 @@ namespace PokemonTextAdventure.Systems
             else Console.WriteLine("Invalid choice.");
         }
 
+        // PokeMart interactie
         static void PokeMart()
         {
             Console.Clear();
@@ -210,6 +220,7 @@ namespace PokemonTextAdventure.Systems
 
         }
 
+        // Random encounter op Route 1
         static void EncounterWildPokemon()
         {
             Dialogue.TypeDialogue("Narrator", "The tall grass rustles...");
@@ -223,7 +234,7 @@ namespace PokemonTextAdventure.Systems
                 new Pokemon("Weedle", 35, new List<Move> { new Move("Poison Sting", 5) })
             };
 
-            // Kies willekeurig een Pokémon
+            // Kies willekeurig een Pokémon voor variatie in encounters
             Random rng = new Random();
             var wildTemplate = Route1Wild[rng.Next(Route1Wild.Count)];
             var wild = new Pokemon(wildTemplate.Name, wildTemplate.MaxHP, wildTemplate.Moves);
@@ -231,7 +242,7 @@ namespace PokemonTextAdventure.Systems
             Dialogue.TypeDialogue("Narrator", $"A wild {wild.Name} appears!");
             BattleSystem.Battle(wild);
 
-            // Controleer of de speler nog een Pokémon heeft die niet is uitgeschakeld
+            // Controleer of speler nog kan verdergaan
             if (!Game.Party[0].IsFainted())
                 MoveTo(Game.Location.ViridianCity, "After the encounter, you continue and soon see Viridian City ahead.");
             else
@@ -240,6 +251,5 @@ namespace PokemonTextAdventure.Systems
                 Environment.Exit(0);
             }
         }
-
     }
 }

@@ -9,13 +9,17 @@ namespace PokemonTextAdventure
     {
         public enum Location { PalletTown, Route1, ViridianCity }
 
+        // Static gekozen zodat er maar één spelstatus is, makkelijk bereikbaar vanuit overal.
         public static List<Pokemon> Party { get; private set; } = new List<Pokemon>();
         public static List<Pokemon> Storage { get; private set; } = new List<Pokemon>();
+
+        // Locatie en doel centraal in Game opgeslagen i.p.v. per locatie-object,
+        // omdat er altijd maar één actieve locatie/goal tegelijk is.
         public static Location CurrentLocation { get; private set; } = Location.PalletTown;
         public static string CurrentGoal { get; private set; } = "Talk to Professor Oak and choose your first Pokémon.";
         public static bool GameStarted { get; private set; } = false;
 
-        // Inventory
+        // Inventory simpel gehouden als ints voor toegankelijkheid; geen complex systeem nodig.
         public static int PokeBalls { get; private set; } = 5;
         public static int Money { get; private set; } = 500;
         public const int MaxPartySize = 6;
@@ -24,6 +28,7 @@ namespace PokemonTextAdventure
         {
             ShowWelcome();
 
+            // Eindeloze lus gebruikt zodat de game blijft draaien tot de speler zelf afsluit.
             while (true)
             {
                 if (!GameStarted)
@@ -32,11 +37,14 @@ namespace PokemonTextAdventure
                     string input = Console.ReadLine()?.Trim().ToLower();
                     if (string.IsNullOrEmpty(input)) continue;
 
+                    // Eerst globale commando’s checken, zodat deze overal in het spel werken.
                     if (HandleGlobalCommands(input)) continue;
                     HandleStartMenu(input);
                 }
                 else
                 {
+                    // Locaties krijgen hun eigen verantwoordelijkheid voor logica,
+                    // zodat Game niet te groot/chaotisch wordt.
                     Locations.ShowLocationMenu(CurrentLocation);
                     Console.Write("\n> ");
                     string input = Console.ReadLine()?.Trim().ToLower();
@@ -47,6 +55,7 @@ namespace PokemonTextAdventure
                 }
             }
         }
+
 
         // ---------- Global Commands ----------
         static bool HandleGlobalCommands(string input) => input switch
