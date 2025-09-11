@@ -38,6 +38,13 @@ namespace PokemonTextAdventure.Systems
                     Console.WriteLine("1. Pokémon Center");
                     Console.WriteLine("2. Poké Mart");
                     Console.WriteLine("3. Go back to Route 1");
+                    Console.WriteLine("4. Go north to Route 2");
+                    break;
+
+                case Game.Location.Route2:
+                    Console.WriteLine("\nWhat do you want to do?");
+                    Console.WriteLine("1. Explore grass (encounter Pokémon + Blue)");
+                    Console.WriteLine("2. Go back to Viridian City");
                     break;
             }
         }
@@ -66,8 +73,20 @@ namespace PokemonTextAdventure.Systems
                     if (input == "1" || input == "center" || input == "pokémon center") PokemonCenter();
                     else if (input == "2" || input == "mart" || input == "poké mart") PokeMart();
                     else if (input == "3" || input == "go back") MoveTo(Game.Location.Route1, "You leave Viridian City and return to Route 1.");
+                    else if (input == "4" || input == "route 2")MoveTo(Game.Location.Route2, "You head north from Viridian City and arrive at Route 2.");
                     else Console.WriteLine("Type 1 for Pokémon Center, 2 for Poké Mart, 3 to go back.");
                     break;
+
+                case Game.Location.Route2:
+                    if (input == "1" || input == "explore" || input == "encounter")
+                        EncounterWildPokemonRoute2();
+                    else if (input == "2" || input == "go back")
+                        MoveTo(Game.Location.ViridianCity, "You return to Viridian City.");
+                    else Console.WriteLine("Type 1 to explore or 2 to go back.");
+                    break;
+
+
+
             }
         }
 
@@ -250,6 +269,112 @@ namespace PokemonTextAdventure.Systems
                 Console.WriteLine("Game Over! Your Pokémon fainted.");
                 Environment.Exit(0);
             }
+
         }
+        static void EncounterWildPokemonRoute2()
+        {
+            Dialogue.TypeDialogue("Narrator", "You step into the tall grass on Route 2...");
+
+            List<Pokemon> Route2Wild = new List<Pokemon>
+            {
+                new Pokemon("Pidgey", 45, new List<Move>
+                {
+                    new Move("Tackle", 8),
+                    new Move("Gust", 10)
+                }),
+                new Pokemon("Rattata", 35, new List<Move>
+                {
+                    new Move("Quick Attack", 10),
+                    new Move("Tackle", 8)
+                }),
+                new Pokemon("Nidoran♂", 41, new List<Move>
+                {
+                    new Move("Peck", 9),
+                    new Move("Leer", 0)
+                }),
+                new Pokemon("Nidoran♀", 41, new List<Move>
+                {
+                    new Move("Scratch", 9),
+                    new Move("Growl", 0)
+                }),
+                new Pokemon("Caterpie", 40, new List<Move>
+                {
+                    new Move("Tackle", 6),
+                    new Move("String Shot", 0)
+                }),
+                new Pokemon("Weedle", 38, new List<Move>
+                {
+                    new Move("Poison Sting", 6),
+                    new Move("String Shot", 0)
+                })
+            };
+
+            Random rng = new Random();
+            var wildTemplate = Route2Wild[rng.Next(Route2Wild.Count)];
+            var wild = new Pokemon(wildTemplate.Name, wildTemplate.MaxHP, wildTemplate.Moves);
+
+            Dialogue.TypeDialogue("Narrator", $"A wild {wild.Name} appears!");
+            BattleSystem.Battle(wild);
+
+            if (!Game.Party[0].IsFainted())
+            {
+                Dialogue.TypeDialogue("Narrator", "After your encounter, someone approaches...");
+                RivalBattle(); // hier komt Blue na de wilde encounter
+            }
+            else
+            {
+                Console.WriteLine("Game Over! Your Pokémon fainted.");
+                Environment.Exit(0);
+            }
+        }
+
+        static void RivalBattle()
+        {
+            Dialogue.TypeDialogue("Blue", "\"Ha! So you got a Pokémon too? Let's battle!\"");
+
+            // Blue kiest altijd de starter die sterk is tegen die van jou
+            Pokemon blueStarter;
+            if (Game.Party[0].Name == "Bulbasaur")
+                blueStarter = new Pokemon("Charmander", 39, new List<Move> { new Move("Scratch", 10), new Move("Growl", 0) });
+            else if (Game.Party[0].Name == "Charmander")
+                blueStarter = new Pokemon("Squirtle", 44, new List<Move> { new Move("Tackle", 10), new Move("Tail Whip", 0) });
+            else
+                blueStarter = new Pokemon("Bulbasaur", 45, new List<Move> { new Move("Tackle", 10), new Move("Growl", 0) });
+
+            BattleSystem.Battle(blueStarter);
+
+            if (Game.Party.Exists(p => !p.IsFainted()))
+            {
+                Dialogue.TypeDialogue("Blue", "\"What?! I lost?! Fine, I'll train harder next time!\"");
+                Dialogue.TypeDialogue("Narrator", "Congratulations! You won your first rival battle.");
+                EndGame();
+            }
+            else
+            {
+                Dialogue.TypeDialogue("Narrator", "You lost your battle against Blue...");
+                EndGame();
+            }
+        }
+
+        static void EndGame()
+        {
+            Console.WriteLine("\n=== END OF DEMO ===");
+            Console.WriteLine("Thanks for playing!");
+            Console.WriteLine("1. Restart");
+            Console.WriteLine("2. Quit");
+            Console.Write("> ");
+            string input = Console.ReadLine()?.Trim().ToLower();
+            if (input == "1" || input == "restart")
+            {
+                Console.Clear();
+                Game.Start(); // start game opnieuw
+            }
+            else
+            {
+                Console.WriteLine("Goodbye, Trainer!");
+                Environment.Exit(0);
+            }
+        }
+
     }
 }

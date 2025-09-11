@@ -7,7 +7,7 @@ namespace PokemonTextAdventure
 {
     public static class Game
     {
-        public enum Location { PalletTown, Route1, ViridianCity }
+        public enum Location { PalletTown, Route1, ViridianCity, Route2 }
 
         // Static gekozen zodat er maar één spelstatus is, makkelijk bereikbaar vanuit overal.
         public static List<Pokemon> Party { get; private set; } = new List<Pokemon>();
@@ -131,8 +131,9 @@ namespace PokemonTextAdventure
             Console.WriteLine("===============================");
             Console.WriteLine("Welcome, Trainer!");
             Console.WriteLine("Type 'start' to begin your journey.");
+            Console.WriteLine("Type 'load' to load your last saved game.");
             Console.WriteLine("Type 'help' for instructions.");
-            Console.WriteLine("You can also type 'hint', 'goal', 'party', or 'quit' anytime.");
+            Console.WriteLine("You can also type 'hint', 'goal', 'party', 'save' or 'quit' anytime.");
         }
 
         static void ShowInstructions()
