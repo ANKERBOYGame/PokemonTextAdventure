@@ -1,7 +1,7 @@
 ﻿using PokemonTextAdventure.Models;
 using System.Collections.Generic;
 
-namespace PokemonTextAdventure.Systems
+namespace Text_based_adventure.Models
 {
     // Data container voor opslaan/laden
     public class SaveData
