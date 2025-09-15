@@ -216,27 +216,52 @@ namespace PokemonTextAdventure.Systems
             Console.Clear();
             Dialogue.TypeDialogue("Shopkeeper", "\"Welcome to the Poké Mart!\"");
             Console.WriteLine($"You have {Game.Money} Pokédollars and {Game.PokeBalls} Poké Balls.");
-            Console.WriteLine("\n1. Buy Poké Ball (200₽)");
-            Console.WriteLine("2. Leave");
-            Console.Write("> ");
-            string input = Console.ReadLine()?.Trim().ToLower();
 
-            if (input == "1" || input == "buy")
+            while (true) // blijf in de shop tot speler kiest om te leaven
             {
-                if (Game.SpendMoney(200))
+                Console.WriteLine("\n1. Buy Poké Balls (200₽ each)");
+                Console.WriteLine("2. Leave");
+                Console.Write("> ");
+                string input = Console.ReadLine()?.Trim().ToLower();
+
+                if (input == "1" || input == "buy")
                 {
-                    Game.AddPokeball();
-                    Console.WriteLine("You bought a Poké Ball!");
-                    Console.WriteLine($"Now you have {Game.PokeBalls} Poké Balls.");
-                }
-                else Console.WriteLine("Not enough money!");
-            }
-            else if (input == "2" || input == "leave")
-            {
-                Console.WriteLine("You leave the Poké Mart.");
-            }
-            else Console.WriteLine("Invalid option.");
+                    Console.Write("How many Poké Balls would you like to buy? ");
+                    string qtyInput = Console.ReadLine()?.Trim();
 
+                    if (int.TryParse(qtyInput, out int quantity) && quantity > 0)
+                    {
+                        int totalCost = quantity * 200;
+
+                        if (Game.Money >= totalCost)
+                        {
+                            for (int i = 0; i < quantity; i++)
+                                Game.AddPokeball();
+
+                            Game.SpendMoney(totalCost);
+                            Console.WriteLine($"You bought {quantity} Poké Ball(s)!");
+                            Console.WriteLine($"You now have {Game.PokeBalls} Poké Balls and {Game.Money}₽ left.");
+                        }
+                        else
+                        {
+                            Console.WriteLine("You don’t have enough money!");
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("Invalid number.");
+                    }
+                }
+                else if (input == "2" || input == "leave")
+                {
+                    Console.WriteLine("You leave the Poké Mart.");
+                    break; // stop de loop -> terug naar het spel
+                }
+                else
+                {
+                    Console.WriteLine("Invalid option.");
+                }
+            }
         }
 
         // Random encounter op Route 1
@@ -341,7 +366,7 @@ namespace PokemonTextAdventure.Systems
             else
                 blueStarter = new Pokemon("Bulbasaur", 45, new List<Move> { new Move("Tackle", 10), new Move("Growl", 0) });
 
-            BattleSystem.Battle(blueStarter);
+            BattleSystem.Battle(blueStarter, true);
 
             if (Game.Party.Exists(p => !p.IsFainted()))
             {
